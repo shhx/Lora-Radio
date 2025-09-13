@@ -1,0 +1,2 @@
+- 4.2.1 Low Power Mode and High Sensitivity Mode
+- 

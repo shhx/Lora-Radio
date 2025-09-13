@@ -1,0 +1,125 @@
+/*
+  ______                              _
+ / _____)             _              | |
+( (____  _____ ____ _| |_ _____  ____| |__
+ \____ \| ___ |    (_   _) ___ |/ ___)  _ \
+ _____) ) ____| | | || |_| ____( (___| | | |
+(______/|_____)_|_|_| \__)_____)\____)_| |_|
+    (C)2015 Semtech
+
+Description: Handling of the node configuration protocol
+
+License: Revised BSD License, see LICENSE.TXT file include in the project
+
+Maintainer: Miguel Luis and Gregory Cristian
+*/
+#ifndef __SX1281_HAL_H__
+#define __SX1281_HAL_H__
+
+#include "hw.h"
+
+void SX1281HalWaitOnBusy( void );
+
+void SX1281HalInit( DioIrqHandler **irqHandlers );
+
+void SX1281HalIoInit( void );
+
+/*!
+ * \brief Soft resets the radio
+ */
+void SX1281HalReset( void );
+
+/*!
+ * \brief Clears the instruction ram memory block
+ */
+void SX1281HalClearInstructionRam( void );
+
+/*!
+ * \brief Wakes up the radio
+ */
+void SX1281HalWakeup( void );
+
+/*!
+ * \brief Send a command that write data to the radio
+ *
+ * \param [in]  opcode        Opcode of the command
+ * \param [in]  buffer        Buffer to be send to the radio
+ * \param [in]  size          Size of the buffer to send
+ */
+void SX1281HalWriteCommand( RadioCommands_t opcode, uint8_t *buffer, uint16_t size );
+
+/*!
+ * \brief Send a command that read data from the radio
+ *
+ * \param [in]  opcode        Opcode of the command
+ * \param [out] buffer        Buffer holding data from the radio
+ * \param [in]  size          Size of the buffer
+ */
+void SX1281HalReadCommand( RadioCommands_t opcode, uint8_t *buffer, uint16_t size );
+
+/*!
+ * \brief Write data to the radio memory
+ *
+ * \param [in]  address       The address of the first byte to write in the radio
+ * \param [in]  buffer        The data to be written in radio's memory
+ * \param [in]  size          The number of bytes to write in radio's memory
+ */
+void SX1281HalWriteRegisters( uint16_t address, uint8_t *buffer, uint16_t size );
+
+/*!
+ * \brief Write a single byte of data to the radio memory
+ *
+ * \param [in]  address       The address of the first byte to write in the radio
+ * \param [in]  value         The data to be written in radio's memory
+ */
+void SX1281HalWriteRegister( uint16_t address, uint8_t value );
+
+/*!
+ * \brief Read data from the radio memory
+ *
+ * \param [in]  address       The address of the first byte to read from the radio
+ * \param [out] buffer        The buffer that holds data read from radio
+ * \param [in]  size          The number of bytes to read from radio's memory
+ */
+void SX1281HalReadRegisters( uint16_t address, uint8_t *buffer, uint16_t size );
+
+/*!
+ * \brief Read a single byte of data from the radio memory
+ *
+ * \param [in]  address       The address of the first byte to write in the
+     *                            radio
+ *
+ * \retval      value         The value of the byte at the given address in
+     *                            radio's memory
+ */
+uint8_t SX1281HalReadRegister( uint16_t address );
+
+/*!
+ * \brief Write data to the buffer holding the payload in the radio
+ *
+ * \param [in]  offset        The offset to start writing the payload
+ * \param [in]  buffer        The data to be written (the payload)
+ * \param [in]  size          The number of byte to be written
+ */
+void SX1281HalWriteBuffer( uint8_t offset, uint8_t *buffer, uint8_t size );
+
+/*!
+ * \brief Read data from the buffer holding the payload in the radio
+ *
+ * \param [in]  offset        The offset to start reading the payload
+ * \param [out] buffer        A pointer to a buffer holding the data from the radio
+ * \param [in]  size          The number of byte to be read
+ */
+void SX1281HalReadBuffer( uint8_t offset, uint8_t *buffer, uint8_t size );
+
+/*!
+ * \brief Returns the status of DIOs pins
+ *
+ * \retval      dioStatus     A byte where each bit represents a DIO state:
+ *                            [ DIOx | BUSY ]
+ */
+uint8_t SX1281HalGetDioStatus( void );
+
+void SX1281HalIoIrqInit( DioIrqHandler **irqHandlers );
+
+#endif // __SX1281_HAL_H__
