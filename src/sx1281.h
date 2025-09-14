@@ -57,6 +57,7 @@ void sx1281_set_rx_gain_regime(SX1280_RxGainRegime_t regime);
 
 uint8_t sx1281_get_status(void);
 uint8_t sx1281_get_rx_buf_addr();
+void sx1281_get_rx_buffer_status(uint8_t* payload_len, uint8_t* buffer_ptr);
 void sx1281_set_dio_irq_params(uint16_t irq_mask, uint16_t dio1_mask, uint16_t dio2_mask, uint16_t dio3_mask);
 uint16_t sx1281_get_irq_status(void);
 void sx1281_clear_irq_status(uint16_t irq_mask);

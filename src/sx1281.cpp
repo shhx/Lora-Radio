@@ -293,6 +293,13 @@ uint8_t sx1281_get_rx_buf_addr() {
     return buf[1];
 }
 
+void sx1281_get_rx_buffer_status(uint8_t* payload_len, uint8_t* buffer_ptr) {
+    uint8_t buf[2] = {0};
+    sx1281_read_commands(SX1280_RADIO_GET_RXBUFFERSTATUS, buf, sizeof(buf));
+    *payload_len = buf[0];
+    *buffer_ptr = buf[1];
+}
+
 void sx1281_set_rx_gain_regime(SX1280_RxGainRegime_t regime) {
     sx1281_write_register(SX1280_REG_RX_GAIN, regime);
 }

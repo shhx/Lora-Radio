@@ -7,7 +7,7 @@
 
 // RX_minimal.ino
 #define PACKET_SIZE 8
-#define PREAMBLE_SIZE 12
+#define PREAMBLE_SIZE 40
 
 void setup() {
     Serial.begin(115200);
@@ -16,7 +16,7 @@ void setup() {
         Serial.println(F("ERROR - SPI Pins not set correctly!"));
         ESP.reset();
     }
-    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
 
     pinMode(LED_PIN, OUTPUT);
     pinMode(RADIO_NSS, OUTPUT);
@@ -42,16 +42,15 @@ void setup() {
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2440000000);  // 2.4 GHz, match TX
 
-    // Mod / packet params: SF7, BW 800k, CR 4/5, explicit header, CRC ON
-    sx1281_cfg_mod_params_lora(SX1280_LORA_SF7, SX1280_LORA_BW_0800, SX1280_LORA_CR_LI_4_5);
+    sx1281_cfg_mod_params_lora(SX1280_LORA_SF10, SX1280_LORA_BW_0800, SX1280_LORA_CR_4_5);
     sx1281_set_packet_params_lora(PREAMBLE_SIZE,
-                                  SX1280_LORA_PACKET_EXPLICIT,
-                                  0,                       // length ignored in explicit
+                                  SX1280_LORA_PACKET_IMPLICIT,
+                                  PACKET_SIZE,
                                   SX1280_LORA_CRC_ON,
-                                  SX1280_LORA_IQ_NORMAL);
+                                  SX1280_LORA_IQ_INVERTED);
 
 
-    sx1281_set_regulator_mode(SX1280_USE_LDO);
+    sx1281_set_regulator_mode(SX1280_USE_DCDC);
     sx1281_set_tx_params(0, SX1280_RADIO_RAMP_04_US); // TX params okay even on RX side
 
     // IRQs: request SYNCWORD_VALID, RX_DONE, CRC_ERROR
@@ -62,67 +61,70 @@ void setup() {
 
     radio_rfamp_rx_enable();        // enable LNA / RF switch to RX
     sx1281_clear_irq_status(0xFFFF); // clear anything stale
-    sx1281_set_mode(SX1280_MODE_RX_CONT, 0);
+    sx1281_set_mode(SX1280_MODE_RX_CONT, 50000);
     delay(100);
-
-    Serial.println(F("RX ready (SF7 BW800 CR4/5 preamble12 explicit CRC ON)"));
 }
 
 void loop() {
-    // blink for activity
-    digitalWrite(LED_PIN, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN, LOW);
-    delay(100);
+    // Poll IRQ register every ~100 ms
+    uint16_t irq = sx1281_get_irq_status();
+    if (irq != 0) {
+        Serial.print("IRQ raw: 0x"); Serial.println(irq, HEX);
 
-    int8_t rssi = sx1281_get_rssi_inst();
-    Serial.print("RSSI: "); Serial.print(rssi); Serial.println(" dBm");
-
-    // Poll DIO1 (IRQ pin) or optionally poll IRQ register periodically
-    if (digitalRead(RADIO_DIO1) == HIGH) {
-        uint16_t irq = sx1281_get_irq_status();
-        Serial.print("IRQ: 0x"); Serial.println(irq, HEX);
-
-        // If sync valid seen, show a message
+        if (irq & SX1280_IRQ_RX_TX_TIMEOUT) {
+            Serial.println("  RX_TX_TIMEOUT - no packet");
+            sx1281_set_mode(SX1280_MODE_RX_CONT, 10000); // restart RX
+        }
+        // Check common flags
         if (irq & SX1280_IRQ_SYNCWORD_VALID) {
-            Serial.println("SYNCWORD_VALID");
+            Serial.println("  SYNCWORD_VALID");
+        }
+        if (irq & SX1280_IRQ_SYNCWORD_ERROR) {
+            Serial.println("  SYNCWORD_ERROR");
         }
         if (irq & SX1280_IRQ_CRC_ERROR) {
-            Serial.println("CRC_ERROR");
-            sx1281_clear_irq_status(irq);
-            return;
+            Serial.println("  CRC_ERROR");
         }
-
-        SX1280_PacketStatusLoRa_t pkt;
         if (irq & SX1280_IRQ_RX_DONE) {
-            sx1281_get_packet_status_lora(&pkt); // fills .rssi and .snr
-            // get length (explicit header): read buffer start and payload length
-            uint8_t payload_len = sx1281_get_rx_buf_addr(); // your wrapper returns length or buffer offset depending on lib
-            if (payload_len == 0) {
-                // fallback: read the PacketLen register or assume PACKET_SIZE
-                payload_len = PACKET_SIZE;
+            Serial.println("  RX_DONE");
+
+            // Get packet status (SNR, RSSI)
+            SX1280_PacketStatusLoRa_t pkt;
+            sx1281_get_packet_status_lora(&pkt);
+            Serial.print("  pkt RSSI: "); Serial.print(pkt.rssi); Serial.print(" dBm");
+            Serial.print("  SNR: "); Serial.println(pkt.snr);
+
+            // Get RX buffer status (payload length and buffer pointer)
+            uint8_t payload_len = 0;
+            uint8_t buffer_ptr = 0;
+            // Use your wrapper that implements "GetRxBufferStatus"
+            sx1281_get_rx_buffer_status(&payload_len, &buffer_ptr);
+            Serial.print("  rx buffer ptr: "); Serial.print(buffer_ptr);
+            Serial.print("  payload_len: "); Serial.println(payload_len);
+
+            if (payload_len > 0) {
+                uint8_t payload[payload_len + 1];
+                memset(payload, 0, payload_len + 1);
+                sx1281_read_buffer(buffer_ptr, payload, payload_len);
+                Serial.print("  payload: ");
+                for (int i = 0; i < payload_len; ++i) Serial.print((char)payload[i]);
+                Serial.println();
+            } else {
+                Serial.println("  payload_len == 0");
             }
-
-            uint8_t payload[payload_len + 1];
-            memset(payload, 0, payload_len + 1);
-            sx1281_read_buffer(0, payload, payload_len);
-
-            Serial.print("RX: '");
-            for (uint8_t i = 0; i < payload_len; ++i) Serial.print((char)payload[i]);
-            Serial.print("' | RSSI: ");
-            Serial.print(pkt.rssi);
-            Serial.print(" dBm | SNR: ");
-            Serial.print(pkt.snr);
-            Serial.println(" dB");
-
-            sx1281_clear_irq_status(irq);
-        } else {
-            // If DIO1 high but no RX_DONE, just clear and continue
-            sx1281_clear_irq_status(irq);
         }
-    } else {
-        print_radio_status();
-        uint16_t irq = sx1281_get_irq_status();
-        Serial.print("IRQ: 0x"); Serial.println(irq, HEX);
+
+        // Clear the IRQs we just handled
+        sx1281_clear_irq_status(irq);
     }
+
+    // Optional: print RSSI floor every 1s so you know radio sees energy
+    static unsigned long last = 0;
+    if (millis() - last > 1000) {
+        last = millis();
+        int8_t r = sx1281_get_rssi_inst(); // get instant RSSI (signed dBm)
+        Serial.print("RSSI floor: "); Serial.print(r); Serial.println(" dBm");
+    }
+
+    delay(100);
 }

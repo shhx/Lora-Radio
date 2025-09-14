@@ -5,7 +5,7 @@
 #include "rf_amp.h"
 
 #define PACKET_SIZE 8
-#define PREAMBLE_SIZE 12
+#define PREAMBLE_SIZE 40
 
 void setup() {
     Serial.begin(115200);
@@ -14,7 +14,7 @@ void setup() {
         Serial.println(F("ERROR - SPI Pins not set correctly!"));
         ESP.reset();
     }
-    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
 
     pinMode(LED_PIN, OUTPUT);
     pinMode(RADIO_NSS, OUTPUT);
@@ -39,14 +39,14 @@ void setup() {
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2440000000);
 
-    sx1281_cfg_mod_params_lora(SX1280_LORA_SF7, SX1280_LORA_BW_0800, SX1280_LORA_CR_LI_4_5);
+    sx1281_cfg_mod_params_lora(SX1280_LORA_SF10, SX1280_LORA_BW_0800, SX1280_LORA_CR_4_5);
     sx1281_set_packet_params_lora(PREAMBLE_SIZE,
-                                  SX1280_LORA_PACKET_EXPLICIT,
-                                  0,
+                                  SX1280_LORA_PACKET_IMPLICIT,
+                                  PACKET_SIZE,
                                   SX1280_LORA_CRC_ON,
-                                  SX1280_LORA_IQ_NORMAL);
+                                  SX1280_LORA_IQ_INVERTED);
 
-    sx1281_set_regulator_mode(SX1280_USE_LDO);
+    sx1281_set_regulator_mode(SX1280_USE_DCDC);
     sx1281_set_tx_params(0, SX1280_RADIO_RAMP_04_US);
 
     uint16_t dio1_mask = SX1280_IRQ_TX_DONE;
@@ -55,8 +55,6 @@ void setup() {
 
     radio_rfamp_tx_enable(); // ensure TX path enabled
     sx1281_clear_irq_status(0xFFFF);
-
-    Serial.println(F("TX ready (SF7 BW800 CR4/5 preamble12 explicit CRC ON)"));
 }
 
 void loop() {
