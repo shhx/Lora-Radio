@@ -87,7 +87,13 @@ void sx1281_write_commands(uint8_t command, uint8_t* buffer, uint16_t size) {
     if (CMD_STATUS(halRxBuffer[0]) == 0x3 ||
         CMD_STATUS(halRxBuffer[0]) == 0x4 ||
         CMD_STATUS(halRxBuffer[0]) == 0x5) {
-        Serial.println(F("ERROR - Write Command Error!"));
+        Serial.print(F("ERROR - Write Command Error!"));
+        Serial.print(" CMD: 0x");
+        Serial.print(command, HEX);
+        Serial.print(" Status: 0x");
+        Serial.print(RADIO_STATE(halRxBuffer[0]), HEX);
+        Serial.print(" 0x");
+        Serial.println(CMD_STATUS(halRxBuffer[0]), HEX);
     }
     // Serial.print(" Status: 0x");
     // Serial.print(RADIO_STATE(halRxBuffer[0]), HEX);

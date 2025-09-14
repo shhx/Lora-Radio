@@ -39,10 +39,10 @@ void setup() {
     sx1281_set_mode(SX1280_MODE_STDBY_RC, 0);
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2400'000'000);  // Set frequency to 2.4 GHz
-    sx1281_cfg_mod_params_lora(SX1280_LORA_SF6, SX1280_LORA_BW_0200, SX1280_LORA_CR_LI_4_8);
-    sx1281_set_packet_params_lora(PREAMBLE_SIZE, SX1280_LORA_PACKET_FIXED_LENGTH,
-                                  PACKET_SIZE, SX1280_LORA_CRC_OFF, SX1280_LORA_IQ_NORMAL);
-    sx1281_set_regulator_mode(SX1280_USE_DCDC);
+    sx1281_cfg_mod_params_lora(SX1280_LORA_SF7, SX1280_LORA_BW_0800, SX1280_LORA_CR_4_5);
+    sx1281_set_packet_params_lora(PREAMBLE_SIZE, SX1280_LORA_PACKET_VARIABLE_LENGTH,
+                                  0, SX1280_LORA_CRC_ON, SX1280_LORA_IQ_NORMAL);
+    sx1281_set_regulator_mode(SX1280_USE_LDO);
     sx1281_set_tx_params(SX1280_POWER_MIN, SX1280_RADIO_RAMP_04_US);
 
     uint16_t dio1_mask = SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_DONE;
@@ -56,7 +56,7 @@ void setup() {
     while(RADIO_STATE(status) != SX1280_RADIO_RX) {
         Serial.print("Status: 0x");
         Serial.println(CMD_STATUS(status), HEX);
-        Serial.print("Radio not in RX_CONT mode! Current mode: 0x");
+        Serial.print("Radio not in RX mode! Current mode: 0x");
         Serial.println(RADIO_STATE(status), HEX);
         sx1281_set_mode(SX1280_MODE_RX_CONT, 0);
         delay(500);
