@@ -102,7 +102,8 @@ void sx1281_write_commands(uint8_t command, uint8_t* buffer, uint16_t size) {
 }
 
 void sx1281_write_command(uint8_t command, uint8_t val) {
-    sx1281_write_commands(command, nullptr, 0);
+    uint8_t buf = val;
+    sx1281_write_commands(command, &buf, 1);
 }
 
 void sx1281_read_commands(uint8_t command, uint8_t* buffer, uint16_t size) {
@@ -247,7 +248,7 @@ void sx1281_set_packet_params_lora(uint8_t preamble_len, SX1280_RadioLoRaPacketL
     buf[1] = header_type;
     buf[2] = payload_len;
     buf[3] = crcType;
-    buf[4] = invert_iq ? SX1280_LORA_IQ_INVERTED : SX1280_LORA_IQ_NORMAL;;
+    buf[4] = invert_iq;
     buf[5] = 0x00;
     buf[6] = 0x00; // Not used
 
@@ -265,8 +266,8 @@ void sx1281_set_regulator_mode(SX1280_RadioRegulatorModes_t mode) {
 
 void sx1281_get_packet_status_lora(SX1280_PacketStatusLoRa_t* status) {
     uint8_t buf[2] = {0};
-    sx1281_write_commands(SX1280_RADIO_GET_PACKETSTATUS, buf, sizeof(buf));
-    status->rssi = -(int8_t)buf[0] / 2.0;
+    sx1281_read_commands(SX1280_RADIO_GET_PACKETSTATUS, buf, sizeof(buf));
+    status->rssi = -(int8_t)(buf[0] / 2.0);
     status->snr = (int8_t)buf[1] / RADIO_SNR_SCALE;
 
     // Datasheet pag93 Table 11-66: RSSI and SNR Packet Status
@@ -300,6 +301,11 @@ void sx1281_get_rx_buffer_status(uint8_t* payload_len, uint8_t* buffer_ptr) {
     *buffer_ptr = buf[1];
 }
 
+void sx1281_set_rx_buffer_baseaddr(uint8_t tx_addr, uint8_t rx_addr) {
+    uint8_t buf[2] = {tx_addr, rx_addr};
+    sx1281_write_commands(SX1280_RADIO_SET_BUFFERBASEADDRESS, buf, sizeof(buf));
+}
+
 void sx1281_set_rx_gain_regime(SX1280_RxGainRegime_t regime) {
     sx1281_write_register(SX1280_REG_RX_GAIN, regime);
 }
@@ -328,4 +334,9 @@ void sx1281_clear_irq_status(uint16_t irq_mask) {
     buf[0] = (uint8_t)(((uint16_t)irq_mask >> 8) & 0x00FF);
     buf[1] = (uint8_t)((uint16_t)irq_mask & 0x00FF);
     sx1281_write_commands(SX1280_RADIO_CLR_IRQSTATUS, buf, sizeof(buf));
+}
+
+void sx1281_set_cont_preamble() {
+    uint8_t buf;
+    sx1281_write_commands(SX1280_RADIO_SET_TXCONTINUOUSPREAMBLE, &buf, 0);
 }

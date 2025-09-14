@@ -10,3 +10,5 @@
 #define RADIO_SCK   14
 #define POWER_RXEN  9
 #define POWER_TXEN  10
+
+#define PREAMBLE_SIZE 12

@@ -5,9 +5,7 @@
 #include "rf_amp.h"
 #include "utils.h"
 
-// RX_minimal.ino
 #define PACKET_SIZE 8
-#define PREAMBLE_SIZE 40
 
 void setup() {
     Serial.begin(115200);
@@ -42,14 +40,15 @@ void setup() {
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2440000000);  // 2.4 GHz, match TX
 
-    sx1281_cfg_mod_params_lora(SX1280_LORA_SF10, SX1280_LORA_BW_0800, SX1280_LORA_CR_4_5);
+    sx1281_cfg_mod_params_lora(SX1280_LORA_SF11, SX1280_LORA_BW_0200, SX1280_LORA_CR_LI_4_8);
     sx1281_set_packet_params_lora(PREAMBLE_SIZE,
-                                  SX1280_LORA_PACKET_IMPLICIT,
+                                  SX1280_LORA_PACKET_EXPLICIT,
                                   PACKET_SIZE,
                                   SX1280_LORA_CRC_ON,
-                                  SX1280_LORA_IQ_INVERTED);
+                                  SX1280_LORA_IQ_NORMAL);
 
 
+    sx1281_set_rx_buffer_baseaddr(0, 0);
     sx1281_set_regulator_mode(SX1280_USE_DCDC);
     sx1281_set_tx_params(0, SX1280_RADIO_RAMP_04_US); // TX params okay even on RX side
 
@@ -61,7 +60,7 @@ void setup() {
 
     radio_rfamp_rx_enable();        // enable LNA / RF switch to RX
     sx1281_clear_irq_status(0xFFFF); // clear anything stale
-    sx1281_set_mode(SX1280_MODE_RX_CONT, 50000);
+    sx1281_set_mode(SX1280_MODE_RX_CONT, 0);
     delay(100);
 }
 
@@ -69,18 +68,9 @@ void loop() {
     // Poll IRQ register every ~100 ms
     uint16_t irq = sx1281_get_irq_status();
     if (irq != 0) {
-        Serial.print("IRQ raw: 0x"); Serial.println(irq, HEX);
-
         if (irq & SX1280_IRQ_RX_TX_TIMEOUT) {
             Serial.println("  RX_TX_TIMEOUT - no packet");
             sx1281_set_mode(SX1280_MODE_RX_CONT, 10000); // restart RX
-        }
-        // Check common flags
-        if (irq & SX1280_IRQ_SYNCWORD_VALID) {
-            Serial.println("  SYNCWORD_VALID");
-        }
-        if (irq & SX1280_IRQ_SYNCWORD_ERROR) {
-            Serial.println("  SYNCWORD_ERROR");
         }
         if (irq & SX1280_IRQ_CRC_ERROR) {
             Serial.println("  CRC_ERROR");
@@ -94,10 +84,8 @@ void loop() {
             Serial.print("  pkt RSSI: "); Serial.print(pkt.rssi); Serial.print(" dBm");
             Serial.print("  SNR: "); Serial.println(pkt.snr);
 
-            // Get RX buffer status (payload length and buffer pointer)
             uint8_t payload_len = 0;
             uint8_t buffer_ptr = 0;
-            // Use your wrapper that implements "GetRxBufferStatus"
             sx1281_get_rx_buffer_status(&payload_len, &buffer_ptr);
             Serial.print("  rx buffer ptr: "); Serial.print(buffer_ptr);
             Serial.print("  payload_len: "); Serial.println(payload_len);

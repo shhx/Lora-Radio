@@ -5,7 +5,6 @@
 #include "rf_amp.h"
 
 #define PACKET_SIZE 8
-#define PREAMBLE_SIZE 40
 
 void setup() {
     Serial.begin(115200);
@@ -39,15 +38,16 @@ void setup() {
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2440000000);
 
-    sx1281_cfg_mod_params_lora(SX1280_LORA_SF10, SX1280_LORA_BW_0800, SX1280_LORA_CR_4_5);
+    sx1281_cfg_mod_params_lora(SX1280_LORA_SF11, SX1280_LORA_BW_0200, SX1280_LORA_CR_LI_4_8);
     sx1281_set_packet_params_lora(PREAMBLE_SIZE,
-                                  SX1280_LORA_PACKET_IMPLICIT,
+                                  SX1280_LORA_PACKET_EXPLICIT,
                                   PACKET_SIZE,
                                   SX1280_LORA_CRC_ON,
-                                  SX1280_LORA_IQ_INVERTED);
+                                  SX1280_LORA_IQ_NORMAL);
 
-    sx1281_set_regulator_mode(SX1280_USE_DCDC);
-    sx1281_set_tx_params(0, SX1280_RADIO_RAMP_04_US);
+    sx1281_set_rx_buffer_baseaddr(0, 0);
+    sx1281_set_regulator_mode(SX1280_USE_LDO);
+    sx1281_set_tx_params(SX1280_POWER_MAX, SX1280_RADIO_RAMP_04_US);
 
     uint16_t dio1_mask = SX1280_IRQ_TX_DONE;
     uint16_t irq_mask  = SX1280_IRQ_TX_DONE | SX1280_IRQ_CRC_ERROR;
@@ -59,7 +59,8 @@ void setup() {
 
 void loop() {
     const char msg[PACKET_SIZE] = "ABCDEFG"; // 8 bytes
-    sx1281_write_buffer(0, (uint8_t*)msg, PACKET_SIZE);
+    //sx1281_set_rx_buffer_baseaddr(0, 0);
+    sx1281_write_buffer(0, (uint8_t*)msg, sizeof(msg));
     sx1281_clear_irq_status(0xFFFF);
 
     sx1281_set_mode(SX1280_MODE_TX, 0);
