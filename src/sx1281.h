@@ -52,6 +52,7 @@ void sx1281_set_packet_params_lora(uint8_t preambleLen, SX1280_RadioLoRaPacketLe
 void sx1281_set_tx_params(uint8_t power, SX1280_RadioRampTimes_t ramp_time);
 void sx1281_set_regulator_mode(SX1280_RadioRegulatorModes_t mode);
 void sx1281_get_packet_status_lora(SX1280_PacketStatusLoRa_t* status);
+int8_t sx1281_get_rssi_inst(void);
 void sx1281_set_rx_gain_regime(SX1280_RxGainRegime_t regime);
 
 uint8_t sx1281_get_status(void);

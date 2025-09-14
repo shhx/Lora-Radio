@@ -275,6 +275,12 @@ void sx1281_get_packet_status_lora(SX1280_PacketStatusLoRa_t* status) {
     status->rssi += negOffset;
 }
 
+int8_t sx1281_get_rssi_inst(void) {
+    uint8_t buf[2] = {0};
+    sx1281_read_commands(SX1280_RADIO_GET_RSSIINST, buf, sizeof(buf));
+    return -(int8_t)(buf[0] / 2.0);
+}
+
 uint8_t sx1281_get_status(void) {
     uint8_t status = 0;
     sx1281_read_commands(SX1280_RADIO_GET_STATUS, &status, 1);
