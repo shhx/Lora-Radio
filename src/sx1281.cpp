@@ -256,6 +256,7 @@ void sx1281_set_packet_params_lora(uint8_t preamble_len, SX1280_RadioLoRaPacketL
 }
 
 void sx1281_set_tx_params(uint8_t power, SX1280_RadioRampTimes_t ramp_time) {
+    power = constrain(power, SX1280_POWER_MIN, SX1280_POWER_MAX) - SX1280_POWER_MIN;
     uint8_t buf[2] = {power, ramp_time};
     sx1281_write_commands(SX1280_RADIO_SET_TXPARAMS, buf, sizeof(buf));
 }
