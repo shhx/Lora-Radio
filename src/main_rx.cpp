@@ -42,7 +42,7 @@ void setup() {
 
     sx1281_cfg_mod_params_lora(SX1280_LORA_SF11, SX1280_LORA_BW_0200, SX1280_LORA_CR_LI_4_8);
     sx1281_set_packet_params_lora(PREAMBLE_SIZE,
-                                  SX1280_LORA_PACKET_EXPLICIT,
+                                  SX1280_LORA_PACKET_FIXED_LENGTH,
                                   PACKET_SIZE,
                                   SX1280_LORA_CRC_ON,
                                   SX1280_LORA_IQ_NORMAL);
@@ -87,6 +87,7 @@ void loop() {
             uint8_t payload_len = 0;
             uint8_t buffer_ptr = 0;
             sx1281_get_rx_buffer_status(&payload_len, &buffer_ptr);
+            payload_len = PACKET_SIZE;
             Serial.print("  rx buffer ptr: "); Serial.print(buffer_ptr);
             Serial.print("  payload_len: "); Serial.println(payload_len);
 
@@ -104,14 +105,6 @@ void loop() {
 
         // Clear the IRQs we just handled
         sx1281_clear_irq_status(irq);
-    }
-
-    // Optional: print RSSI floor every 1s so you know radio sees energy
-    static unsigned long last = 0;
-    if (millis() - last > 1000) {
-        last = millis();
-        int8_t r = sx1281_get_rssi_inst(); // get instant RSSI (signed dBm)
-        Serial.print("RSSI floor: "); Serial.print(r); Serial.println(" dBm");
     }
 
     delay(100);

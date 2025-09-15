@@ -40,13 +40,13 @@ void setup() {
 
     sx1281_cfg_mod_params_lora(SX1280_LORA_SF11, SX1280_LORA_BW_0200, SX1280_LORA_CR_LI_4_8);
     sx1281_set_packet_params_lora(PREAMBLE_SIZE,
-                                  SX1280_LORA_PACKET_EXPLICIT,
+                                  SX1280_LORA_PACKET_FIXED_LENGTH,
                                   PACKET_SIZE,
                                   SX1280_LORA_CRC_ON,
                                   SX1280_LORA_IQ_NORMAL);
 
     sx1281_set_rx_buffer_baseaddr(0, 0);
-    sx1281_set_regulator_mode(SX1280_USE_LDO);
+    sx1281_set_regulator_mode(SX1280_USE_DCDC);
     sx1281_set_tx_params(SX1280_POWER_MAX, SX1280_RADIO_RAMP_04_US);
 
     uint16_t dio1_mask = SX1280_IRQ_TX_DONE;
@@ -86,5 +86,5 @@ void loop() {
     digitalWrite(LED_PIN, HIGH);
     delay(100);
     digitalWrite(LED_PIN, LOW);
-    delay(100);
+    delay(1000);
 }
