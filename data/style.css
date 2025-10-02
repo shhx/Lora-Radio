@@ -1,0 +1,24 @@
+body {
+    font-family: sans-serif;
+    max-width: 600px;
+    margin: 40px auto;
+    background: rgb(216, 216, 216);
+    padding: 2em;
+    border-radius: 1em;
+}
+h1 {
+    color: #202020;
+    text-align: center;
+}
+#stats {
+    margin-top: 2em;
+    font-size: 1.2em;
+    color: white;
+    background: #656565;
+    padding: 1.5em;
+    border-radius: 0.5em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+#stats div {
+    margin: 0.5em 0;
+}
