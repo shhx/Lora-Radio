@@ -11,14 +11,16 @@ body {
 
 .container {
     width: 90vh;
-    /* height: 90vh; */
+    height: 96vh;
     padding: 1rem 1.5rem;
+    padding-bottom: 1rem;
     background: #fff;
     border-radius: 1.5em;
     box-shadow: 0 6px 24px rgba(80, 120, 180, 0.08);
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    overflow-y: auto;
 }
 
 h1 {
@@ -33,12 +35,13 @@ h1 {
 /* Stats grid with cards */
 #stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(20vw, 1fr));
     gap: 0.5rem;
     background: #f0f1f3;
-    border-radius: 0.5em;
+    border-radius: 0.3em;
     padding: 1.5em 1.2em;
-    font-size: clamp(1rem, 1.13vw, 1.13em);
+    font-size: clamp(1.0rem, 1.13vw, 1.13em);
+    text-align: left;
 }
 
 #stats div {
@@ -47,7 +50,7 @@ h1 {
     padding: 0.5em 0.7em;
     box-shadow: 0 2px 8px rgb(20 30 55 / 0.1);
     display: flex;
-    justify-content: space-between;
+    gap: 0.2em;
     align-items: center;
     cursor: default;
 }
@@ -82,7 +85,7 @@ h1 {
 
 canvas {
     width: 100% !important;
-    max-height: 280px;
+    max-height: 25vh;
     background: #f0f1f3;
     border-radius: 0.5em;
     box-shadow: 0 1px 6px rgba(40, 66, 120, 0.03);
@@ -105,10 +108,18 @@ canvas {
         grid-template-columns: 1fr;
         font-size: 1rem;
     }
+
     #resetBtn {
         max-width: 100%;
     }
-    .charts {
+
+    /* .charts {
         padding: 1rem;
-    }
+    } */
+}
+
+.leaflet-control-button.active {
+    background-color: #77ca76;
+    /* color: white; */
+    box-shadow: 0 0 5px #339c3d;
 }
