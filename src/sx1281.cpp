@@ -155,9 +155,9 @@ void sx1281_read_buffer(uint8_t offset, uint8_t* buffer, uint8_t size) {
 
 void sx1281_reset() {
     digitalWrite(RADIO_RST, LOW);
-    delay(50);
+    delay(10);
     digitalWrite(RADIO_RST, HIGH);
-    delay(20);
+    delay(10);
 }
 
 void sx1281_set_mode(SX1280_RadioOperatingModes_t mode, uint16_t incomingTimeout) {
@@ -340,4 +340,11 @@ void sx1281_clear_irq_status(uint16_t irq_mask) {
 void sx1281_set_cont_preamble() {
     uint8_t buf;
     sx1281_write_commands(SX1280_RADIO_SET_TXCONTINUOUSPREAMBLE, &buf, 0);
+}
+
+void sx1281_set_sleep(bool keep_data_buffer, bool keep_ram) {
+    uint8_t buf = 0;
+    buf |= int(keep_ram) << 0;
+    buf |= int(keep_data_buffer) << 1;
+    sx1281_write_command(SX1280_RADIO_SET_SLEEP, buf);
 }

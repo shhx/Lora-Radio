@@ -1,5 +1,6 @@
 #pragma once
 
+#define BUTTON_PIN  0 // GPIO0
 #define LED_PIN     16
 #define RADIO_BUSY  5
 #define RADIO_DIO1  4

@@ -63,5 +63,6 @@ void sx1281_set_dio_irq_params(uint16_t irq_mask, uint16_t dio1_mask, uint16_t d
 uint16_t sx1281_get_irq_status(void);
 void sx1281_clear_irq_status(uint16_t irq_mask);
 void sx1281_set_cont_preamble();
+void sx1281_set_sleep(bool keep_data_buffer, bool keep_ram);
 
 #endif // __SX1281_H__
