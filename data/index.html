@@ -2,27 +2,36 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Radio Stats</title>
+    <meta charset="UTF-8" />
+    <title>Radio Transmission Stats</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 
 <body>
-    <h1>Radio Transmission Stats</h1>
-    <div id="stats">
-        <div>Packets Sent: <span id="sent">0</span></div>
-        <div>Packets Acked: <span id="acked">0</span></div>
-        <div>Last RSSI: <span id="rssi">0</span></div>
-        <div>Distance to Receiver: <span id="distance">0</span> m</div>
-        <div>Last ACK Time: <span id="lastack">0</span>s</div>
-        <div>Last Send Time: <span id="lastsent">0</span>s</div>
-        <div>GPS Fix Type: <span id="gps_fix_type">0</span></div>
-        <div>GPS Fix OK: <span id="gps_fix_ok">false</span></div>
-        <div>GPS Latitude: <span id="gps_lat">0</span></div>
-        <div>GPS Longitude: <span id="gps_lon">0</span></div>
-        <div>Satellites Visible: <span id="gps_numSV">0</span></div>
-        <div>GPS UTC Time: <span id="gps_utc">--:--:--</span></div>
+    <div class="container">
+        <h1>Radio Transmission Stats</h1>
+        <div id="stats">
+            <div><b>Packets Sent:</b> <span id="sent">0</span></div>
+            <div><b>Packets Acked:</b> <span id="acked">0</span></div>
+            <div><b>Packets Lost (%):</b> <span id="lost_pct">0.00</span>%</div>
+            <div><b>Last RSSI:</b> <span id="rssi">0</span></div>
+            <div><b>Distance to Receiver:</b> <span id="distance">0</span> m</div>
+            <div><b>Satellites Visible:</b> <span id="gps_numSV">0</span></div>
+            <div><b>GPS Position:</b> <span id="gps_lat">0</span>, <span id="gps_lon">0</span></div>
+            <div><b>GPS Fix Type:</b> <span id="gps_fix_type">0</span></div>
+            <div><b>GPS Fix OK:</b> <span id="gps_fix_ok">false</span></div>
+            <div><b>GPS UTC Time:</b> <span id="gps_utc">--:--:--</span></div>
+            <button id="resetBtn">Reset Stats</button>
+        </div>
+        <div class="charts">
+            <canvas id="combinedChart"></canvas>
+        </div>
+        <div id="map"></div>
     </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="main.js"></script>
 </body>
 

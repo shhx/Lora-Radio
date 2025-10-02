@@ -23,8 +23,6 @@ enum RadioState {
 
 const char* ap_ssid = "LoraRadioAP";
 const char* ap_password = "12345678";
-const float RECEIVER_LAT = 40.00000;      // replace with real receiver lat
-const float RECEIVER_LON = -3.00000;      // replace with real receiver lon
 static uint16_t radio_tx_period_ms = 2000;
 static uint32_t last_tx_time = 0;
 static RadioState radio_state = RADIO_STATE_IDLE;
@@ -38,6 +36,13 @@ static int16_t last_rssi = 0;
 static uint32_t last_ack_received_time = 0;
 static uint32_t last_pkt_sent_time = 0;
 static double last_distance_m = 0;
+
+// History buffers for plotting (adjust size to balance memory and history depth)
+#define STATS_HISTORY_LEN 120 // Save last 120 samples (~4 minutes at 2s updates)
+static int16_t rssi_history[STATS_HISTORY_LEN] = {0};
+static double distance_history[STATS_HISTORY_LEN] = {0};
+static int stats_head = 0;
+static bool stats_buffer_full = false;
 
 wl_status_t last_wifi_status = WL_DISCONNECTED;
 
@@ -76,26 +81,69 @@ void serveStaticFiles() {
         json += "\"distance\":" + String(last_distance_m, 2) + ",";
         json += "\"last_ack\":" + String(last_ack_received_time) + ",";
         json += "\"last_sent\":" + String(last_pkt_sent_time) + ",";
-
-        // Added GPS info - convert lat/lon from 1e-7 int to float degrees:
+        // Loss percentage
+        float loss_pct = 0.0;
+        if (tx_pkt_counter > 0) loss_pct = 100.0 * (tx_pkt_counter - ack_pkt_counter) / tx_pkt_counter;
+        json += "\"loss_pct\":" + String(loss_pct, 2) + ",";
+        // GPS info as before
         json += "\"gps_lat\":" + String(nav_pvt.lat * 1e-7, 7) + ",";
         json += "\"gps_lon\":" + String(nav_pvt.lon * 1e-7, 7) + ",";
         json += "\"gps_numSV\":" + String(nav_pvt.numSV) + ",";
         json += "\"gps_fix_type\":" + String(nav_pvt.fixType) + ",";
         json += "\"gps_fix_ok\":" + String((nav_pvt.flags.gnssFixOK) ? "true" : "false") + ",";
+        char utc_time[9];
+        uint32_t sec = nav_pvt.iTOW / 1000;
+        uint8_t h = (sec / 3600) % 24;
+        uint8_t m = (sec % 3600) / 60;
+        uint8_t s = sec % 60;
+        snprintf(utc_time, sizeof(utc_time), "%02d:%02d:%02d", h, m, s);
+        json += "\"gps_utc_time\":\"" + String(utc_time) + "\",";
+        // History stats for plot
+        json += "\"rssi_hist\":[";
+        int samples = stats_buffer_full ? STATS_HISTORY_LEN : stats_head;
+        for (int i = 0; i < samples; ++i) {
+            int idx = (stats_buffer_full ? (stats_head + i) % STATS_HISTORY_LEN : i);
+            json += String(rssi_history[idx]);
+            if (i < samples - 1) json += ",";
+        }
+        json += "],";
+        json += "\"distance_hist\":[";
+        for (int i = 0; i < samples; ++i) {
+            int idx = (stats_buffer_full ? (stats_head + i) % STATS_HISTORY_LEN : i);
+            json += String(distance_history[idx], 2);
+            if (i < samples - 1) json += ",";
+        }
+        json += "]";
+        json += "}";
 
-        // Format UTC time HHMMSS from nav_pvt:
-        char utc_time[9]; // hh:mm:ss
-        uint32_t time_int = nav_pvt.iTOW / 1000; // milliseconds since week start → rough UTC seconds
-        uint8_t hours = (time_int / 3600) % 24;
-        uint8_t minutes = (time_int % 3600) / 60;
-        uint8_t seconds = time_int % 60;
-        snprintf(utc_time, sizeof(utc_time), "%02d:%02d:%02d", hours, minutes, seconds);
-        json += "\"gps_utc_time\":\"" + String(utc_time) + "\"";
-
+        request->send(200, "application/json", json);
+    });
+    server.on("/reset_stats", HTTP_POST, [](AsyncWebServerRequest *request) {
+        tx_pkt_counter = 0;
+        ack_pkt_counter = 0;
+        last_rssi = 0;
+        last_distance_m = 0.0;
+        last_ack_received_time = 0;
+        last_pkt_sent_time = 0;
+        stats_head = 0;
+        stats_buffer_full = false;
+        for (int i = 0; i < STATS_HISTORY_LEN; ++i) {
+            rssi_history[i] = 0;
+            distance_history[i] = 0;
+        }
+        request->send(200, "text/plain", "OK");
+    });
+    server.on("/current_pos", HTTP_GET, [](AsyncWebServerRequest *request) {
+        String json = "{";
+        json += "\"gps_lat\":" + String(nav_pvt.lat * 1e-7, 7) + ",";
+        json += "\"gps_lon\":" + String(nav_pvt.lon * 1e-7, 7) + ",";
+        json += "\"gps_numSV\":" + String(nav_pvt.numSV) + ",";
+        json += "\"gps_fix_type\":" + String(nav_pvt.fixType) + ",";
+        json += "\"gps_fix_ok\":" + String((nav_pvt.flags.gnssFixOK) ? "true" : "false");
         json += "}";
         request->send(200, "application/json", json);
     });
+
 
     server.begin();
 }
@@ -148,8 +196,6 @@ void setup() {
         Serial.println(F("ERROR - Failed to read radio version!"));
         while (1);
     }
-    Serial.print("Firmware Version: 0x");
-    Serial.println(firmwareRev, HEX);
     sx1281_set_mode(SX1280_MODE_STDBY_RC, 0);
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2440000000);
@@ -184,6 +230,16 @@ void handle_wifi() {
     last_wifi_status = wifi_status;
 }
 
+void update_history_buffers(int16_t rssi, double distance) {
+    rssi_history[stats_head] = rssi;
+    distance_history[stats_head] = distance;
+    stats_head++;
+    if (stats_head >= STATS_HISTORY_LEN) {
+        stats_head = 0;
+        stats_buffer_full = true;
+    }
+}
+
 void loop() {
     handle_wifi();
     if (ota_enabled) {
@@ -200,12 +256,12 @@ void loop() {
         .sv_num = nav_pvt.numSV,
     };
 
+
     switch (radio_state) {
         case RADIO_STATE_IDLE: {
             if ((millis() - last_tx_time) < radio_tx_period_ms) break;
 
-            // Prepare to send packet
-            Serial.println("Starting TX");
+            // Serial.println("Starting TX");
             tx_pkt_counter++;
             last_pkt_sent_time = millis() / 1000;
             Packet_t packet = {
@@ -230,17 +286,20 @@ void loop() {
                     ack_pkt_counter++;
                     last_ack_received_time = millis() / 1000;
                     Serial.printf("ACK received, RSSI: %d\n", rx_pkt->ack.rssi);
+                    last_rssi = rx_pkt->ack.rssi;
+                    update_history_buffers(last_rssi, last_distance_m);
                 }
                 sx1281_clear_irq_status(irq);
                 radio_rfamp_rx_enable();
                 radio_state = RADIO_STATE_IDLE;
                 last_tx_time = millis();
             } else if (millis() - last_tx_time > 200) {
-                Serial.println("ACK timeout");
+                // Serial.println("ACK timeout");
                 sx1281_clear_irq_status(0xFFFF);
                 radio_rfamp_rx_enable();
                 radio_state = RADIO_STATE_IDLE;
                 last_tx_time = millis();
+                update_history_buffers(-127, last_distance_m); // Mark lost ACK with low RSSI
             }
             break;
         }
@@ -265,5 +324,10 @@ void loop() {
         start_ota_updater();
     }
     ublox_get_new_data();
-    ublox_parse_msg(&nav_pvt);
+    if (ublox_parse_msg(&nav_pvt)) {
+        if(nav_pvt.flags.gnssFixOK) {
+            last_distance_m = haversine(RECEIVER_LAT, RECEIVER_LON,
+                                        nav_pvt.lat * 1e-7, nav_pvt.lon * 1e-7);
+        }
+    }
 }

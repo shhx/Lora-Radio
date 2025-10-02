@@ -1,24 +1,114 @@
 body {
-    font-family: sans-serif;
-    max-width: 600px;
-    margin: 40px auto;
-    background: rgb(216, 216, 216);
-    padding: 2em;
-    border-radius: 1em;
+    background: #f5f7fa;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #222;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
 }
+
+.container {
+    width: 90vh;
+    /* height: 90vh; */
+    padding: 1rem 1.5rem;
+    background: #fff;
+    border-radius: 1.5em;
+    box-shadow: 0 6px 24px rgba(80, 120, 180, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 h1 {
-    color: #202020;
     text-align: center;
+    color: #2a4195;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
 }
+
+/* Stats grid with cards */
 #stats {
-    margin-top: 2em;
-    font-size: 1.2em;
-    color: white;
-    background: #656565;
-    padding: 1.5em;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.5rem;
+    background: #f0f1f3;
     border-radius: 0.5em;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    padding: 1.5em 1.2em;
+    font-size: clamp(1rem, 1.13vw, 1.13em);
 }
+
 #stats div {
-    margin: 0.5em 0;
+    background: #fff;
+    border-radius: 0.3em;
+    padding: 0.5em 0.7em;
+    box-shadow: 0 2px 8px rgb(20 30 55 / 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: default;
+}
+
+/* Reset button full width on small */
+#resetBtn {
+    padding: 0.7em 1.2em;
+    font-size: 1rem;
+    border-radius: 0.3em;
+    box-shadow: 0 4px 12px rgba(43, 103, 232, 0.4);
+    transition: background-color 0.2s ease;
+    width: 100%;
+    max-width: 180px;
+    justify-self: center;
+    border: none;
+    background: #2b67e8;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(20, 30, 55, 0.08);
+    user-select: none;
+}
+
+#resetBtn:hover {
+    background-color: #1a368c;
+}
+
+/* Charts container style */
+.charts {
+    border-radius: 0.5em;
+    box-shadow: 0 1px 8px rgba(80, 120, 160, 0.1);
+}
+
+canvas {
+    width: 100% !important;
+    max-height: 280px;
+    background: #f0f1f3;
+    border-radius: 0.5em;
+    box-shadow: 0 1px 6px rgba(40, 66, 120, 0.03);
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#map {
+    flex-grow: 1;
+    min-height: 30vh;
+    width: 100%;
+    border-radius: 1em;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    #stats {
+        grid-template-columns: 1fr;
+        font-size: 1rem;
+    }
+    #resetBtn {
+        max-width: 100%;
+    }
+    .charts {
+        padding: 1rem;
+    }
 }
