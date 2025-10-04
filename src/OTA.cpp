@@ -8,7 +8,7 @@
 
 static bool lastLEDState = LOW;
 
-void setupWiFi() {
+void setupWiFiOTA() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID, PASS);
     WiFi.mode(WIFI_STA);

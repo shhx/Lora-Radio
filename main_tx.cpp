@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
@@ -46,7 +47,7 @@ static bool stats_buffer_full = false;
 
 wl_status_t last_wifi_status = WL_DISCONNECTED;
 
-UBXNavPVT_t nav_pvt;
+ubx_nav_pvt_t nav_pvt;
 
 AsyncWebServer server(80);
 
@@ -62,13 +63,17 @@ void setupFS() {
     }
 }
 
-void setupWiFiSTA() {
+void setupWiFi() {
+    WiFi.mode(WIFI_STA);
     WiFi.mode(WIFI_AP_STA);
-    WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
+    WiFi.setSleepMode(WIFI_NONE_SLEEP);
     WiFi.setOutputPower(5.0); // dBm
     WiFi.softAP(ap_ssid, ap_password);  // Start the access point
     WiFi.begin(SSID, PASS);
     Serial.print("Connecting to WiFi");
+    if (!MDNS.begin("radio")) {
+        Serial.println("Error initiating mDNS");
+    }
 }
 
 void serveStaticFiles() {
@@ -143,7 +148,15 @@ void serveStaticFiles() {
         json += "}";
         request->send(200, "application/json", json);
     });
-
+    server.on("/ota", HTTP_POST, [](AsyncWebServerRequest *request) {
+        request->send(200, "text/plain", "OK");
+        start_ota_updater();
+    });
+    server.on("/bootloader", HTTP_POST, [](AsyncWebServerRequest *request) {
+        request->send(200, "text/plain", "OK");
+        delay(100);
+        ESP.rebootIntoUartDownloadMode();
+    });
 
     server.begin();
 }
@@ -172,7 +185,7 @@ void transmit_packet(Packet_t *msg) {
 void setup() {
     Serial.begin(115200);
     setupFS();
-    setupWiFiSTA();
+    setupWiFi();
     serveStaticFiles();
 
     ublox_init();
@@ -228,6 +241,7 @@ void handle_wifi() {
         Serial.println("Wifi disconected!!!");
     }
     last_wifi_status = wifi_status;
+    MDNS.update();
 }
 
 void update_history_buffers(int16_t rssi, double distance) {
@@ -243,6 +257,8 @@ void update_history_buffers(int16_t rssi, double distance) {
 void loop() {
     handle_wifi();
     if (ota_enabled) {
+        // Stop web server to avoid conflicts during OTA
+        server.end();
         sx1281_set_mode(SX1280_MODE_STDBY_RC, 0); // ensure in standby for OTA
         radio_rfamp_rx_enable();
         ArduinoOTA.handle();

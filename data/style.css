@@ -35,7 +35,7 @@ h1 {
 /* Stats grid with cards */
 #stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(20vw, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(20vw, 2fr));
     gap: 0.5rem;
     background: #f0f1f3;
     border-radius: 0.3em;
@@ -55,8 +55,7 @@ h1 {
     cursor: default;
 }
 
-/* Reset button full width on small */
-#resetBtn {
+button {
     padding: 0.7em 1.2em;
     font-size: 1rem;
     border-radius: 0.3em;
@@ -73,7 +72,7 @@ h1 {
     user-select: none;
 }
 
-#resetBtn:hover {
+button:hover {
     background-color: #1a368c;
 }
 

@@ -81,7 +81,10 @@ function updateCombinedChart(rssi, dist) {
     }
 }
 
+let isFetchingStats = false;
 function updateStats() {
+    if (isFetchingStats) return;  // Skip if fetch in progress
+    isFetchingStats = true;
     fetch('stats.json')
         .then(response => response.json())
         .then(data => {
@@ -94,28 +97,61 @@ function updateStats() {
             document.getElementById('gps_lat').textContent = data.gps_lat.toFixed(7);
             document.getElementById('gps_lon').textContent = data.gps_lon.toFixed(7);
             document.getElementById('gps_utc').textContent = data.gps_utc_time;
+            document.getElementById('gps_fix_type').textContent = data.gps_fix_type;
+            document.getElementById('gps_fix_ok').textContent = data.gps_fix_ok;
             updateCombinedChart(data.rssi_hist || [], data.distance_hist || []);
+        })
+        .catch(error => {
+            console.error('Error fetching stats:', error);
+        })
+        .finally(() => {
+            isFetchingStats = false;  // Reset flag regardless of success/failure
         });
 }
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-    fetch('/reset_stats', { method: 'POST' }).then(() => setTimeout(updateStats, 100));
+    fetch('/reset_stats', { method: 'POST' });
 });
 
-setInterval(updateStats, 1000);
-updateStats();
+document.getElementById('ota').addEventListener('click', () => {
+    // fetch and check 200 status
+    fetch('/ota', { method: 'POST' }).then(response => {
+        if (response.ok) {
+            document.getElementById('ota').style.backgroundColor = 'orange';
+        } else {
+            alert('Failed to start OTA');
+        }
+    });
+});
+
+document.getElementById('bootloader').addEventListener('click', () => {
+    fetch('/bootloader', { method: 'POST' }).then(response => {
+        if (response.ok) {
+            document.getElementById('bootloader').style.backgroundColor = 'orange';
+        } else {
+            alert('Failed to enter bootloader');
+        }
+    });
+});
 
 let map = L.map('map').setView([0, 0], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
+L.tileLayer("https://{s}.tile.osm.org/{z}/{x}/{y}.png", {
+    minZoom: 2,
+    maxZoom: 21,
+    tileSize: 256,
+    zoomOffset: 0,
 }).addTo(map);
 
 let trackPoints = [];
 let trackLine = L.polyline(trackPoints, { color: 'blue' }).addTo(map);
-let marker = L.marker()
+let marker = L.marker().setLatLng([0, 0]).addTo(map);
+map.setView([0, 0], 15);
 
 let auto_set_view = true;
+let isFetchingGpsPos = false;
 function updateGpsPos() {
+    if (isFetchingGpsPos) return;  // Skip if fetch in progress
+    isFetchingGpsPos = true;
     fetch('/current_pos')
         .then(response => response.json())
         .then(data => {
@@ -129,9 +165,17 @@ function updateGpsPos() {
                     map.setView([lat, lon]);
                 }
             }
+        })
+        .catch(error => {
+            console.error('Error fetching GPS position:', error);
+        })
+        .finally(() => {
+            isFetchingGpsPos = false;  // Reset flag regardless of outcome
         });
 }
 
+setInterval(updateStats, 1000);
+updateStats();
 setInterval(updateGpsPos, 1000);
 updateGpsPos();
 
