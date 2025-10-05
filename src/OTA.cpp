@@ -11,10 +11,8 @@ static bool lastLEDState = LOW;
 void setupWiFiOTA() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID, PASS);
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(SSID, PASS);
     WiFi.setOutputPower(0);  // max power
-    WiFi.setSleep(false);    // disable sleep mode
+    WiFi.setSleepMode(WIFI_NONE_SLEEP);
     Serial.print("Connecting to WiFi");
     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
         Serial.println("Connection Failed! Rebooting...");

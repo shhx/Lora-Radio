@@ -2,7 +2,15 @@ let combinedChart = null;
 
 function updateCombinedChart(rssi, dist) {
     const length = rssi.length;
-    const labels = Array(length).fill(0).map((_, i) => i - (length - 1));
+
+    // Generate time labels based on update interval (1 second)
+    // Assuming data is collected every 1 second, create relative time labels
+    const now = new Date();
+    const labels = Array(length).fill(0).map((_, i) => {
+        const secondsAgo = (length - 1 - i);
+        const time = new Date(now - secondsAgo * 1000);
+        return time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    });
 
     if (!combinedChart) {
         const ctx = document.getElementById('combinedChart').getContext('2d');
@@ -18,8 +26,8 @@ function updateCombinedChart(rssi, dist) {
                         backgroundColor: 'rgba(37,99,234,0.12)',
                         fill: false,
                         yAxisID: 'y_rssi',
-                        pointRadius: 0,
-                        tension: 0.19
+                        pointRadius: 2,
+                        tension: 0.1
                     },
                     {
                         label: 'Distance (m)',
@@ -28,16 +36,32 @@ function updateCombinedChart(rssi, dist) {
                         backgroundColor: 'rgba(37,99,234,0.09)',
                         fill: false,
                         yAxisID: 'y_dist',
-                        pointRadius: 0,
-                        tension: 0.17
+                        pointRadius: 2,
+                        tension: 0.1
                     }
                 ]
             },
             options: {
+                animation: {
+                    duration: 200,
+                },
+                layout: {
+                    margin: { left: 0, right: 0, top: 0, bottom: 0 },
+                    padding: { left: 0, right: 0, top: 0, bottom: -20 }
+                },
                 responsive: true,
                 scales: {
                     x: {
-                        display: false
+                        display: true,
+                        title: {
+                            display: true,
+                        },
+                        ticks: {
+                            maxRotation: 20,
+                            minRotation: 20,
+                            maxTicksLimit: 10,
+                            autoSkip: true,
+                        }
                     },
                     y_rssi: {
                         type: 'linear',
@@ -100,9 +124,7 @@ function updateStats() {
             document.getElementById('gps_numSV').textContent = data.gps_numSV;
             document.getElementById('gps_lat').textContent = data.gps_lat.toFixed(7);
             document.getElementById('gps_lon').textContent = data.gps_lon.toFixed(7);
-            document.getElementById('gps_utc').textContent = data.gps_utc_time;
-            document.getElementById('gps_fix_type').textContent = data.gps_fix_type;
-            document.getElementById('gps_fix_ok').textContent = data.gps_fix_ok;
+            document.getElementById('gps_fix_type').textContent = `${data.gps_fix_type} / ${data.gps_fix_ok ? 'OK' : 'NO'}`;
 
             // Detect if a new packet was sent and whether it was acknowledged
             if (data.packets_sent > previousPacketsSent) {
@@ -156,6 +178,8 @@ L.tileLayer("https://{s}.tile.osm.org/{z}/{x}/{y}.png", {
     maxZoom: 21,
     tileSize: 256,
     zoomOffset: 0,
+    errorTileUrl: '', // Prevents showing broken tile images
+    keepBuffer: 2 // Keep extra tiles in memory
 }).addTo(map);
 
 // Store track points with their acknowledgment status
@@ -167,30 +191,30 @@ map.setView([0, 0], 15);
 let auto_set_view = true;
 let isFetchingGpsPos = false;
 
+const MIN_MOVE_THRESHOLD = 0.0005;
+
 function updateGpsPos() {
     if (isFetchingGpsPos) return;
     isFetchingGpsPos = true;
-
     fetch('/current_pos')
         .then(response => response.json())
         .then(data => {
             if (data.gps_fix_ok) {
                 let lat = data.gps_lat;
                 let lon = data.gps_lon;
-
-                // Add new point with acknowledgment status
                 let newPoint = {
                     coords: [lat, lon],
                     acked: lastPacketWasAcked
                 };
                 trackPoints.push(newPoint);
-
-                // Redraw all track segments with appropriate colors
                 redrawTrack();
-
                 marker.setLatLng([lat, lon]);
                 if (auto_set_view) {
-                    map.setView([lat, lon]);
+                    let current_map_center = map.getCenter();
+                    if (Math.abs(current_map_center['lat'] - lat) > MIN_MOVE_THRESHOLD ||
+                        Math.abs(current_map_center['lng'] - lon) > MIN_MOVE_THRESHOLD) {
+                        map.setView([lat, lon]);
+                    }
                 }
             }
         })

@@ -24,7 +24,7 @@ enum RadioState {
 
 const char* ap_ssid = "Radio-TX";
 const char* ap_password = "12345678";
-static uint16_t radio_tx_period_ms = 2000;
+static uint16_t radio_tx_period_ms = 2500;
 static uint32_t last_tx_time = 0;
 static RadioState radio_state = RADIO_STATE_IDLE;
 static bool ota_enabled = false;
@@ -212,7 +212,7 @@ void setup() {
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2440000000);
 
-    sx1281_cfg_mod_params_lora(SX1280_LORA_SF9, SX1280_LORA_BW_0200,
+    sx1281_cfg_mod_params_lora(SX1280_LORA_SF12, SX1280_LORA_BW_0400,
                                SX1280_LORA_CR_LI_4_8);
     sx1281_set_packet_params_lora(PREAMBLE_SIZE,
                                   SX1280_LORA_PACKET_FIXED_LENGTH, PACKET_SIZE,
@@ -270,7 +270,7 @@ void loop() {
         .lat = nav_pvt.lat,
         .fix_ok = nav_pvt.flags.gnssFixOK,
         .fix_type = nav_pvt.fixType,
-        .sv_num = nav_pvt.numSV,
+        .sv_num = (uint8_t)(nav_pvt.numSV > 15 ? 15 : nav_pvt.numSV), // limit to 15 for 4 bits
     };
     switch (radio_state) {
         case RADIO_STATE_IDLE: {
