@@ -22,7 +22,7 @@ enum RadioState {
     RADIO_STATE_WAIT_ACK,
 };
 
-const char* ap_ssid = "LoraRadioAP";
+const char* ap_ssid = "Radio-TX";
 const char* ap_password = "12345678";
 static uint16_t radio_tx_period_ms = 2000;
 static uint32_t last_tx_time = 0;
@@ -52,7 +52,7 @@ ubx_nav_pvt_t nav_pvt;
 AsyncWebServer server(80);
 
 void start_ota_updater(void) {
-    setupOTA("radio");
+    setupOTA("radiotx");
     ota_enabled = true;
 }
 
@@ -64,7 +64,6 @@ void setupFS() {
 }
 
 void setupWiFi() {
-    WiFi.mode(WIFI_STA);
     WiFi.mode(WIFI_AP_STA);
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
     WiFi.setOutputPower(5.0); // dBm
@@ -224,7 +223,7 @@ void setup() {
     sx1281_set_tx_params(SX1280_POWER_MAX, SX1280_RADIO_RAMP_04_US);
 
     uint16_t dio1_mask = SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_DONE;
-    uint16_t irq_mask = SX1280_IRQ_TX_DONE | SX1280_IRQ_CRC_ERROR | SX1280_IRQ_RX_DONE;
+    uint16_t irq_mask  = SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_DONE | SX1280_IRQ_SYNCWORD_VALID | SX1280_IRQ_SYNCWORD_ERROR | SX1280_IRQ_CRC_ERROR;
     sx1281_set_dio_irq_params(irq_mask, dio1_mask, 0, 0);
 
     sx1281_clear_irq_status(0xFFFF);
@@ -238,7 +237,7 @@ void handle_wifi() {
         Serial.print("Wifi connected! IP address: ");
         Serial.println(WiFi.localIP());
     } else if (last_wifi_status == WL_CONNECTED && wifi_status != WL_CONNECTED) {
-        Serial.println("Wifi disconected!!!");
+        Serial.println("Wifi disconnected!!!");
     }
     last_wifi_status = wifi_status;
     MDNS.update();
@@ -265,14 +264,14 @@ void loop() {
         // If OTA is enabled, we return early to avoid processing other tasks
         return;
     }
-    
+
     PacketGPS_t packet_gps = {
         .lon = nav_pvt.lon,
         .lat = nav_pvt.lat,
+        .fix_ok = nav_pvt.flags.gnssFixOK,
+        .fix_type = nav_pvt.fixType,
         .sv_num = nav_pvt.numSV,
     };
-
-
     switch (radio_state) {
         case RADIO_STATE_IDLE: {
             if ((millis() - last_tx_time) < radio_tx_period_ms) break;
@@ -301,20 +300,20 @@ void loop() {
                 if (is_ack) {
                     ack_pkt_counter++;
                     last_ack_received_time = millis() / 1000;
-                    Serial.printf("ACK received, RSSI: %d\n", rx_pkt->ack.rssi);
+                    // Serial.printf("ACK received, RSSI: %d\n", rx_pkt->ack.rssi);
                     last_rssi = rx_pkt->ack.rssi;
                     update_history_buffers(last_rssi, last_distance_m);
+                } else {
+                    Serial.println("Received non-ACK packet while waiting for ACK");
                 }
                 sx1281_clear_irq_status(irq);
                 radio_rfamp_rx_enable();
                 radio_state = RADIO_STATE_IDLE;
-                last_tx_time = millis();
-            } else if (millis() - last_tx_time > 200) {
-                // Serial.println("ACK timeout");
+            } else if (millis() - last_tx_time > 1800) {
+                Serial.println("ACK timeout");
                 sx1281_clear_irq_status(0xFFFF);
                 radio_rfamp_rx_enable();
                 radio_state = RADIO_STATE_IDLE;
-                last_tx_time = millis();
                 update_history_buffers(-127, last_distance_m); // Mark lost ACK with low RSSI
             }
             break;
@@ -326,6 +325,7 @@ void loop() {
                 sx1281_clear_irq_status(irq);
                 radio_rfamp_rx_enable();
                 sx1281_set_mode(SX1280_MODE_RX_CONT, 0);
+                last_tx_time = millis();
                 radio_state = RADIO_STATE_WAIT_ACK;
             }
             break;

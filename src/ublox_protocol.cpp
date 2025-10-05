@@ -73,9 +73,9 @@ int ublox_get_next_msg(uint8_t *buffer, int buf_len) {
         return header.length;
     } else if (header.cls == UBX_CLASS_ACK) {
         if (header.id == UBX_ID_ACK_ACK) {
-            Serial.println("ACK received");
+            Serial.println("GPS ACK received");
         } else if (header.id == UBX_ID_ACK_NAK) {
-            Serial.println("NAK received");
+            Serial.println("GPS NAK received");
         } else {
             Serial.println("Unknown ACK message");
         }
