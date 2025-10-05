@@ -5,7 +5,8 @@
     <meta charset="UTF-8" />
     <title>Radio Transmission Stats</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
@@ -22,9 +23,11 @@
             <div><b>GPS Fix Type:</b> <span id="gps_fix_type">0</span></div>
             <div><b>GPS Fix OK:</b> <span id="gps_fix_ok">false</span></div>
             <div><b>GPS UTC Time:</b> <span id="gps_utc">--:--:--</span></div>
+        </div>
+        <div class="buttons">
             <button id="resetBtn">Reset Stats</button>
             <button id="ota">Activate OTA</button>
-            <button id="bootloader">Reset into bootloader</button>
+            <button id="bootloader" class="button-danger">Reset into bootloader</button>
         </div>
         <div class="charts">
             <canvas id="combinedChart"></canvas>

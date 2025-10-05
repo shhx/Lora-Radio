@@ -1,7 +1,24 @@
+:root {
+    --bg-dark: hsl(220 21% 90%);
+    --bg: hsl(220 46% 96%);
+    --bg-light: hsl(220 100% 100%);
+    --text: hsl(221 47% 5%);
+    --text-muted: hsl(220 11% 29%);
+    --highlight: hsl(220 100% 100%);
+    --border: hsl(220 7% 52%);
+    --border-muted: hsl(220 10% 60%);
+    --primary: hsl(221 49% 50%);
+    --secondary: hsl(221, 30%, 40%);
+    --danger: hsl(10, 39%, 50%);
+    --warning: hsl(52 23% 34%);
+    --success: hsl(147 40% 48%);
+    --info: hsl(217 22% 41%);
+}
+
 body {
-    background: #f5f7fa;
+    background: var(--bg);
     font-family: 'Segoe UI', Arial, sans-serif;
-    color: #222;
+    color: var(--text);
     margin: 0;
     padding: 0;
     display: flex;
@@ -14,20 +31,21 @@ body {
     height: 96vh;
     padding: 1rem 1.5rem;
     padding-bottom: 1rem;
-    background: #fff;
+    background: var(--bg-light);
     border-radius: 1.5em;
-    box-shadow: 0 6px 24px rgba(80, 120, 180, 0.08);
+    box-shadow: 0 6px 24px var(--border-muted);
     display: flex;
     flex-direction: column;
     gap: 1rem;
     overflow-y: auto;
+    /* overflow-block: visible; */
 }
 
 h1 {
     text-align: center;
-    color: #2a4195;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    color: var(--primary);
+    font-weight: 700;
+    letter-spacing: 0.03em;
     margin: 0;
     font-size: clamp(1.5rem, 3vw, 2rem);
 }
@@ -37,9 +55,8 @@ h1 {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(20vw, 2fr));
     gap: 0.5rem;
-    background: #f0f1f3;
+    background: var(--bg-light);
     border-radius: 0.3em;
-    padding: 1.5em 1.2em;
     font-size: clamp(1.0rem, 1.13vw, 1.13em);
     text-align: left;
 }
@@ -48,7 +65,7 @@ h1 {
     background: #fff;
     border-radius: 0.3em;
     padding: 0.5em 0.7em;
-    box-shadow: 0 2px 8px rgb(20 30 55 / 0.1);
+    box-shadow: 0 2px 8px var(--border-muted);
     display: flex;
     gap: 0.2em;
     align-items: center;
@@ -59,27 +76,37 @@ button {
     padding: 0.7em 1.2em;
     font-size: 1rem;
     border-radius: 0.3em;
-    box-shadow: 0 4px 12px rgba(43, 103, 232, 0.4);
     transition: background-color 0.2s ease;
     width: 100%;
-    max-width: 180px;
+    /* max-width: 180px; */
     justify-self: center;
     border: none;
-    background: #2b67e8;
+    background: var(--primary);
     color: #fff;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(20, 30, 55, 0.08);
+    box-shadow: 0 2px 8px var(--border-muted);
     user-select: none;
 }
 
 button:hover {
-    background-color: #1a368c;
+    background-color: var(--secondary);
 }
 
 /* Charts container style */
 .charts {
     border-radius: 0.5em;
-    box-shadow: 0 1px 8px rgba(80, 120, 160, 0.1);
+    box-shadow: 0 1px 8px var(--border);
+}
+
+.buttons {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 0.3rem;
+    justify-content: center;
+}
+
+.button-danger {
+    background: var(--danger);
 }
 
 canvas {
@@ -87,7 +114,7 @@ canvas {
     max-height: 25vh;
     background: #f0f1f3;
     border-radius: 0.5em;
-    box-shadow: 0 1px 6px rgba(40, 66, 120, 0.03);
+    box-shadow: 0 1px 6px var(--border);
     display: block;
     margin-left: auto;
     margin-right: auto;
@@ -98,7 +125,7 @@ canvas {
     min-height: 30vh;
     width: 100%;
     border-radius: 1em;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 16px var(--border);
 }
 
 /* Responsive adjustments */
@@ -118,7 +145,7 @@ canvas {
 }
 
 .leaflet-control-button.active {
-    background-color: #77ca76;
+    background-color: var(--success);
     /* color: white; */
-    box-shadow: 0 0 5px #339c3d;
+    box-shadow: 0 0 5px var(--border-muted);
 }
