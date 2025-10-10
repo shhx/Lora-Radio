@@ -161,7 +161,7 @@ void setup() {
     sx1281_set_mode(SX1280_MODE_STDBY_RC, 0);
     sx1281_set_packet_type(SX1280_PACKET_TYPE_LORA);
     sx1281_set_freq_hz(2440000000);
-    sx1281_cfg_mod_params_lora(SX1280_LORA_SF9, SX1280_LORA_BW_0200,
+    sx1281_cfg_mod_params_lora(SX1280_LORA_SF12, SX1280_LORA_BW_0400,
                                SX1280_LORA_CR_LI_4_8);
 
 #define PREAMBLE_SIZE 12
